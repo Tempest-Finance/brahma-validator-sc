@@ -1,0 +1,12 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": ["prettier"],
+  "rules": {
+    "quotes": ["error", "single"],
+    "compiler-version": "warn",
+    "ordering": "warn",
+    "private-vars-leading-underscore": "warn",
+    "interface-starts-with-i": "warn",
+    "imports-order": "warn"
+  }
+}
