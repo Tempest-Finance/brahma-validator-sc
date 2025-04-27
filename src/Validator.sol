@@ -126,8 +126,8 @@ contract Validator is IValidator {
         uint256 poolPriceInDecimals = Math.mulDiv(
             poolPriceX96 * 10 ** oraclePrice.decimals,
             poolPriceX96 * 10 ** IERC20Metadata(token0).decimals(),
-            10 ** IERC20Metadata(token1).decimals()
-        ) >> 192;
+            10 ** IERC20Metadata(token1).decimals() * 1 << 192
+        );
 
         // calculate deviation
         uint256 diff = poolPriceInDecimals > oraclePrice.price
