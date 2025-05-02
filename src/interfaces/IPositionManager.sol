@@ -61,6 +61,4 @@ interface IPositionManager {
     /// @return amount0 The amount of fees collected in token0
     /// @return amount1 The amount of fees collected in token1
     function collect(CollectParams calldata params) external payable returns (uint256 amount0, uint256 amount1);
-
-    function positions(uint256 tokenId) external view returns (bytes memory);
 }

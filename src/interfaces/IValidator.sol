@@ -8,5 +8,30 @@ interface IValidator {
         Thena,
         Shadow
     }
-    function multiSend(bytes memory transactions) external payable;
+
+    struct ValidationConfig {
+        bytes4 selfSelector;
+        bytes configData;
+    }
+
+    struct ValidationRegistration {
+        address target;
+        bytes4 externalSelector;
+        bytes4 selfSelector;
+        bytes configData;
+    }
+
+    error TargetNotAllowed();
+    error NoOracle();
+    error OraclePairOrder();
+
+    // Errors for helper checks
+    error PriceDeviationExceeded();
+    error SlippageExceeded();
+    error SlippageTooHigh();
+
+    // Other common errors (will be added later as needed)
+    error InvalidRecipient();
+    error PositionsCallFailed();
+    error ValidationNotConfigured();
 }

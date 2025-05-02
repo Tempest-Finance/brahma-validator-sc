@@ -7,6 +7,7 @@
     "ordering": "warn",
     "private-vars-leading-underscore": "warn",
     "interface-starts-with-i": "warn",
-    "imports-order": "warn"
+    "imports-order": "warn",
+    "func-visibility": ["warn", { "ignoreConstructors": true }]
   }
 }
