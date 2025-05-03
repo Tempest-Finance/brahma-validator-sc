@@ -45,7 +45,7 @@ contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator,
      * @param target The address of the contract being interacted with.
      * @param callData The original call data for the interaction.
      */
-    function validate(address target, bytes calldata callData) external view {
+    function validate(address target, bytes calldata callData) external {
         // Parse selector and remaining data
         (bytes4 selector, bytes memory data) = callData._popHeadSelector();
 
@@ -56,8 +56,10 @@ contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator,
         require(config.selfSelector != bytes4(0), ValidationNotConfigured());
 
         // Dispatch to the configured public validation function
-        // Use functionStaticCall and let internal functions revert on failure
-        address(this).functionStaticCall(abi.encodeWithSelector(config.selfSelector, target, data, config.configData));
+        // Use functionDelegateCall and let internal functions revert on failure
+        address(this).functionDelegateCall(
+            abi.encodeWithSelector(config.selfSelector, target, data, config.configData)
+        );
     }
 
     /**
@@ -65,7 +67,9 @@ contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator,
      * @dev Requires caller to have the GOVERNANCE_ROLE.
      * @param registrations An array of validation rules to register.
      */
-    function registerValidations(ValidationRegistration[] calldata registrations)
+    function registerValidations(
+        ValidationRegistration[] calldata registrations
+    )
         external
         onlyRole(GOVERNANCE_ROLE) // Use AccessControl modifier
     {
@@ -92,11 +96,10 @@ contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator,
      * @param externalSelector The external function selector being validated.
      * @return config The stored ValidationConfig struct.
      */
-    function getValidationConfig(address target, bytes4 externalSelector)
-        external
-        view
-        returns (ValidationConfig memory config)
-    {
+    function getValidationConfig(
+        address target,
+        bytes4 externalSelector
+    ) external view returns (ValidationConfig memory config) {
         config = _validationConfigs[_validationKey(target, externalSelector)];
     }
 
