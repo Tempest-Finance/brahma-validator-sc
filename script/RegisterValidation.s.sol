@@ -56,7 +56,7 @@ contract RegisterValidationScript is Script {
         registrations[regIndex++] = IValidator.ValidationRegistration({
             target: MOCK_ERC20_TOKEN,
             externalSelector: IERC20.transfer.selector,
-            selfSelector: validator.validateTransfer.selector,
+            selfSelector: validator.validateERC20Transfer.selector,
             configData: erc20TransferConfig
         });
 
@@ -68,7 +68,7 @@ contract RegisterValidationScript is Script {
         registrations[regIndex++] = IValidator.ValidationRegistration({
             target: MOCK_ERC20_TOKEN,
             externalSelector: IERC20.approve.selector,
-            selfSelector: validator.validateAllowance.selector,
+            selfSelector: validator.validateERC20Allowance.selector,
             configData: erc20ApproveConfig
         });
 

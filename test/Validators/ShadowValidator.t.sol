@@ -6,7 +6,7 @@ import { IShadowPositionManager } from 'src/interfaces/IShadowPositionManager.so
 import { IShadowRouter } from 'src/interfaces/IShadowRouter.sol';
 import { IShadowPool } from 'src/interfaces/IShadowPool.sol';
 import { IPositionManager } from 'src/interfaces/IPositionManager.sol'; // For CollectParams
-import { IOracleAdapter } from 'src/interfaces/IOracleAdapter.sol';
+import { IOracleAdapter } from 'src/interfaces/IOracle.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import { IValidator } from 'src/interfaces/IValidator.sol'; // Import IValidator for the struct
 import { PoolAddress as PoolAddressShadow } from 'src/libraries/PoolAddressShadow.sol';

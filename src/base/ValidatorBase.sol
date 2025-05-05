@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 
 import { IValidator } from 'src/interfaces/IValidator.sol';
 import { IOracleRegistry } from 'src/interfaces/IOracleRegistry.sol';
-import { IOracleAdapter } from 'src/interfaces/IOracleAdapter.sol';
+import { IOracleAdapter } from 'src/interfaces/IOracle.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
 
@@ -23,6 +23,9 @@ abstract contract ValidatorBase is IValidator {
 
     // Mapping from token pair (token0 + token1) to its oracle address
     mapping(bytes32 => address) private _oracles;
+
+    /// @notice No validation, used for case that don't need validation
+    function noValidate() external pure override {}
 
     /// @notice Registers a new oracle for token pair
     function _registerOracle(address token0, address token1, address adapter) internal {

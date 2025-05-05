@@ -23,6 +23,7 @@ contract MultiSendCallOnly {
     ///         If the calling method (e.g. execTransaction) received ETH this would revert otherwise
     function multiSend(bytes memory transactions) public payable {
         address _validator = validator;
+
         // solhint-disable-next-line no-inline-assembly
         assembly {
             let length := mload(transactions)
@@ -32,7 +33,23 @@ contract MultiSendCallOnly {
             } lt(i, length) {
                 // Post block is not used in "while mode"
             } {
-                let dataLength := 0
+                let dataLength := mload(add(transactions, add(i, 0x35)))
+                let to := shr(0x60, mload(add(transactions, add(i, 0x01))))
+
+                // add scope to avoid stack too deep
+                // Validate the transaction
+                {
+                    let success := 0
+                    let validateCalldata := encode_validate(to, add(transactions, add(i, 0x35)), dataLength)
+                    // call validate(address,bytes)
+                    let validatePayloadSize := mload(validateCalldata)
+                    let validateCalldataPtr := add(validateCalldata, 32)
+                    success := call(gas(), _validator, 0, validateCalldataPtr, validatePayloadSize, 0, 0)
+                    if eq(success, 0) {
+                        revert(0, 0)
+                    }
+                }
+
                 // add scope to avoid stack too deep
                 // Call forward transaction
                 {
@@ -41,12 +58,23 @@ contract MultiSendCallOnly {
                     // This will also zero out unused data.
                     let operation := shr(0xf8, mload(add(transactions, i)))
                     // We offset the load address by 1 byte (operation byte)
+
+                    // ------------------------------------------------------------
                     // We shift it right by 96 bits (256 - 160 [20 address bytes]) to right-align the data and zero out unused data.
-                    let to := shr(0x60, mload(add(transactions, add(i, 0x01))))
+                    // moved code `let to := shr(0x60, mload(add(transactions, add(i, 0x01))))` to the top to avoid stack too deep
+                    // ------------------------------------------------------------
+
                     // We offset the load address by 21 byte (operation byte + 20 address bytes)
                     let value := mload(add(transactions, add(i, 0x15)))
+                    if gt(value, 0) {
+                        revert(0, 0)
+                    }
+
+                    // ------------------------------------------------------------
                     // We offset the load address by 53 byte (operation byte + 20 address bytes + 32 value bytes)
-                    dataLength := mload(add(transactions, add(i, 0x35)))
+                    // moved code `let dataLength := mload(add(transactions, add(i, 0x35)))` to the top to avoid stack too deep
+                    // ------------------------------------------------------------
+
                     // We offset the load address by 85 byte (operation byte + 20 address bytes + 32 value bytes + 32 data length bytes)
                     let data := add(transactions, add(i, 0x55))
                     let success := 0
@@ -58,22 +86,6 @@ contract MultiSendCallOnly {
                     case 1 {
                         revert(0, 0)
                     }
-                    if eq(success, 0) {
-                        revert(0, 0)
-                    }
-                }
-
-                // Validate the transaction
-                {
-                    let success := 0
-                    let validateCalldata := encode_validate(
-                        _validator,
-                        add(transactions, add(i, 0x55)),
-                        mload(add(transactions, add(i, 0x35)))
-                    )
-                    // call validate(address,bytes)
-                    let validatePayloadSize := mload(validateCalldata)
-                    success := call(gas(), _validator, 0, validateCalldata, validatePayloadSize, 0, 0)
                     if eq(success, 0) {
                         revert(0, 0)
                     }

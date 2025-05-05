@@ -2,22 +2,28 @@
 
 pragma solidity >=0.8.24;
 
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
+import { AccessControlUpgradeable } from '@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol';
 import { ERC20Validator } from 'src/base/ERC20Validator.sol';
+import { ERC721Validator } from 'src/base/ERC721Validator.sol';
 import { ShadowValidator } from 'src/base/ShadowValidator.sol';
 import { VelodromeValidator } from 'src/base/VelodromeValidator.sol';
 import { ThenaValidator } from 'src/base/ThenaValidator.sol';
-
-import { Address } from '@openzeppelin/contracts/utils/Address.sol';
 import { BytesLib } from 'src/libraries/BytesLib.sol';
-
-import { AccessControlUpgradeable } from '@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol';
 
 /**
  * @title Main Validator Contract
  * @notice Aggregates validation logic from various base contracts and dispatches calls.
  * @dev Upgradeable logic contract using AccessControlUpgradeable.
  */
-contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator, VelodromeValidator, ThenaValidator {
+contract Validator is
+    AccessControlUpgradeable,
+    ERC20Validator,
+    ERC721Validator,
+    ShadowValidator,
+    VelodromeValidator,
+    ThenaValidator
+{
     using Address for address;
     using BytesLib for bytes;
 
@@ -51,7 +57,6 @@ contract Validator is AccessControlUpgradeable, ERC20Validator, ShadowValidator,
 
         // Retrieve validation configuration
         ValidationConfig memory config = _validationConfigs[_validationKey(target, selector)];
-
         // Ensure validation is configured for this target/selector
         require(config.selfSelector != bytes4(0), ValidationNotConfigured());
 

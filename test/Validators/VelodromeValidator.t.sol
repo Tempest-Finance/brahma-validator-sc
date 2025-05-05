@@ -7,7 +7,7 @@ import { IVelodromeRouter } from 'src/interfaces/IVelodromeRouter.sol';
 import { IVelodromePool } from 'src/interfaces/IVelodromePool.sol';
 import { IVelodromeFactory } from 'src/interfaces/IVelodromeFactory.sol';
 import { IPositionManager } from 'src/interfaces/IPositionManager.sol'; // For shared structs like CollectParams
-import { IOracleAdapter } from 'src/interfaces/IOracleAdapter.sol';
+import { IOracleAdapter } from 'src/interfaces/IOracle.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import { IValidator } from 'src/interfaces/IValidator.sol'; // Import IValidator for the struct/errors
 import { PoolAddress as PoolAddressVelodrome } from 'src/libraries/PoolAddressVelodrome.sol';

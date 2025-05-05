@@ -12,9 +12,9 @@ interface IERC20Validator {
         address[] allowedSpenders;
     }
 
-    error TransferTooMuch();
+    error ERC20TransferTooMuch();
     error ERC20NotAllowed();
-    error ApproveTooMuch();
+    error ERC20ApproveTooMuch();
 
     /**
      * @notice Validates an ERC20 transfer call.
@@ -22,7 +22,7 @@ interface IERC20Validator {
      * @param callData Abi-encoded transfer parameters (address recipient, uint256 amount).
      * @param configData Abi-encoded ERC20TransferConfig.
      */
-    function validateTransfer(address token, bytes memory callData, bytes memory configData) external view;
+    function validateERC20Transfer(address token, bytes memory callData, bytes memory configData) external view;
 
     /**
      * @notice Validates an ERC20 approve call.
@@ -30,5 +30,5 @@ interface IERC20Validator {
      * @param callData Abi-encoded approve parameters (address spender, uint256 amount).
      * @param configData Abi-encoded ERC20AllowanceConfig.
      */
-    function validateAllowance(address token, bytes memory callData, bytes memory configData) external view;
+    function validateERC20Allowance(address token, bytes memory callData, bytes memory configData) external view;
 }

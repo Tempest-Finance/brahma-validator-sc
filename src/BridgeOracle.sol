@@ -4,28 +4,13 @@ pragma solidity >=0.8.24;
 import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
 import { SafeCast } from '@openzeppelin/contracts/utils/math/SafeCast.sol';
 
-uint16 constant BASE = 10_000;
-uint256 constant CURVE_MAP_SLOT = 65_551;
-uint256 constant POOL_IDX = 420;
-uint256 constant MAX_NUMBER_OF_WITHDRAWAL_SPLIT = 10;
-bytes32 constant GOVERNANCE_ROLE = keccak256('GOVERNANCE');
-bytes32 constant GUARDIAN_ROLE = keccak256('GUARDIAN');
-uint256 constant DEAD_SHARES = 1_000;
+import { IOracle, IOracleAdapter } from 'src/interfaces/IOracle.sol';
 
-string constant BAD_SETUP = 'B';
-string constant PRICE_FEED = 'P';
-string constant SEQUENCER_DOWN = 'SD';
-interface IOracle {
-    function latestRoundData()
-        external
-        view
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
-
-    function decimals() external view returns (uint8);
-}
-
-contract BridgeOracle is AccessControl {
+contract BridgeOracle is IOracleAdapter, AccessControl {
     using SafeCast for uint256;
+
+    bytes32 public constant GOVERNANCE_ROLE = keccak256('GOVERNANCE_ROLE');
+    bytes32 public constant GUARDIAN_ROLE = keccak256('GUARDIAN_ROLE');
 
     address public baseUsdOracle;
     address public quoteUsdOracle;
@@ -40,9 +25,18 @@ contract BridgeOracle is AccessControl {
     /// So that there will be an off-chain keeper to check sequencer status and set that status to this variable
     bool public isSequencerDown;
 
+    /// Some chains have not had sequencer uptime feed contract yet
+    /// So that there will be an off-chain keeper to check sequencer status and set startedAt to this variable
+    uint256 public sequencerStartedAt;
+
     event OracleSet(string oracleType, address _oracleAddress);
     event OracleTimeLimitSet(string oracleType, uint64 _timeLimit);
-    event IsSequencerDownSet(bool value);
+    event SequencerStatusUpdated(bool isDown, uint256 startedAt);
+    event SkipCheckStartedAtSet(bool value);
+
+    error BadSetup();
+    error PriceFeed();
+    error SequencerDown();
 
     constructor(
         address _baseUsdOracle,
@@ -56,7 +50,7 @@ contract BridgeOracle is AccessControl {
         address governor
     ) {
         if (_baseUsdOracle == address(0) || _quoteUsdOracle == address(0) || governor == address(0)) {
-            revert(BAD_SETUP);
+            revert BadSetup();
         }
         baseUsdOracle = _baseUsdOracle;
         quoteUsdOracle = _quoteUsdOracle;
@@ -123,10 +117,12 @@ contract BridgeOracle is AccessControl {
 
     /// @notice Some chains have not had sequencer uptime feed contract yet
     ///         This function will be used by an off-chain keeper for setting isSequencerDown to mark sequencer status as down
-    /// @param value The new value of isSequencerDown
-    function setIsSequencerDown(bool value) external onlyRole(GUARDIAN_ROLE) {
-        isSequencerDown = value;
-        emit IsSequencerDownSet(value);
+    /// @param isDown The new value of isSequencerDown
+    /// @param startedAt The new value of sequencerStartedAt
+    function updateSequencerStatus(bool isDown, uint256 startedAt) external onlyRole(GUARDIAN_ROLE) {
+        isSequencerDown = isDown;
+        sequencerStartedAt = startedAt;
+        emit SequencerStatusUpdated(isDown, startedAt);
     }
 
     function latestAnswer() external view returns (int256) {
@@ -134,51 +130,45 @@ contract BridgeOracle is AccessControl {
 
         IOracle _quoteUsdOracle = IOracle(quoteUsdOracle);
         (, int256 quoteOraclePrice, , uint256 quoteUpdatedAt, ) = _quoteUsdOracle.latestRoundData();
-        if (quoteOraclePrice <= 0 || quoteUpdatedAt + quoteOracleTimeLimit <= block.timestamp) revert(PRICE_FEED);
+        if (quoteOraclePrice <= 0 || quoteUpdatedAt + quoteOracleTimeLimit <= block.timestamp) revert PriceFeed();
         uint8 quoteOracleDecimals = _quoteUsdOracle.decimals();
 
         IOracle _baseUsdOracle = IOracle(baseUsdOracle);
         (, int256 baseOraclePrice, , uint256 baseUpdatedAt, ) = _baseUsdOracle.latestRoundData();
-        if (baseOraclePrice <= 0 || baseUpdatedAt + baseOracleTimeLimit <= block.timestamp) revert(PRICE_FEED);
+        if (baseOraclePrice <= 0 || baseUpdatedAt + baseOracleTimeLimit <= block.timestamp) revert PriceFeed();
         uint8 baseOracleDecimals = _baseUsdOracle.decimals();
 
         return
-            (quoteOraclePrice * (10 ** (decimals + baseOracleDecimals)).toInt256()) /
-            (baseOraclePrice * (10 ** quoteOracleDecimals).toInt256());
-    }
-
-    function numeraireLatestAnswer() external view returns (int256) {
-        _checkSequencerDowntime();
-
-        IOracle _baseUsdOracle = IOracle(baseUsdOracle);
-        (, int256 baseOraclePrice, , uint256 updatedAt, ) = _baseUsdOracle.latestRoundData();
-        if (baseOraclePrice <= 0 || updatedAt + baseOracleTimeLimit <= block.timestamp) revert(PRICE_FEED);
-
-        return (baseOraclePrice * (10 ** decimals).toInt256()) / (10 ** _baseUsdOracle.decimals()).toInt256();
+            (baseOraclePrice * (10 ** (quoteOracleDecimals + decimals)).toInt256()) /
+            (quoteOraclePrice * (10 ** baseOracleDecimals).toInt256());
     }
 
     function _checkSequencerDowntime() internal view {
         if (!isL2) return;
 
         // there's no sequencer uptime oracle contract
+        uint256 startedAt;
         if (sequencerUptimeOracle == address(0)) {
-            if (isSequencerDown) revert(SEQUENCER_DOWN);
+            if (isSequencerDown) revert SequencerDown();
+            startedAt = sequencerStartedAt;
         } else {
             // check sequencer downtime via sequencer uptime oracle contract
-            (, int256 answer, uint256 startedAt, , ) = IOracle(sequencerUptimeOracle).latestRoundData();
+            int256 answer;
+            (, answer, startedAt, , ) = IOracle(sequencerUptimeOracle).latestRoundData();
 
             // ref: https://codehawks.cyfrin.io/c/2024-07-zaros/s/189 for checking startedAt != 0
             bool isSequencerUp = answer == 0 && startedAt != 0;
-            if (!isSequencerUp) {
-                revert(SEQUENCER_DOWN);
-            }
 
-            // Make sure the grace period has passed after the
-            // sequencer is back up.
-            uint256 timeSinceUp = block.timestamp - startedAt;
-            if (timeSinceUp <= sequencerDowntimeLimit) {
-                revert(SEQUENCER_DOWN);
+            if (!isSequencerUp) {
+                revert SequencerDown();
             }
+        }
+
+        // Make sure the grace period has passed after the
+        // sequencer is back up.
+        uint256 timeSinceUp = block.timestamp - startedAt;
+        if (timeSinceUp <= sequencerDowntimeLimit) {
+            revert SequencerDown();
         }
     }
 }

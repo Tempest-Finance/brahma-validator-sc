@@ -3,11 +3,10 @@
 pragma solidity >=0.8.24;
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { ValidatorBase } from 'src/base/ValidatorBase.sol';
 import { IERC20Validator } from 'src/interfaces/IERC20Validator.sol';
 
-abstract contract ERC20Validator is ValidatorBase, IERC20Validator {
-    function validateTransfer(address /* token */, bytes memory data, bytes memory configData) public pure {
+abstract contract ERC20Validator is IERC20Validator {
+    function validateERC20Transfer(address /* token */, bytes memory data, bytes memory configData) public pure {
         // decode the data argument (which contains the encoded transfer arguments)
         (address recipient, uint256 amount) = abi.decode(data, (address, uint256));
         // decode the config data directly
@@ -15,7 +14,7 @@ abstract contract ERC20Validator is ValidatorBase, IERC20Validator {
 
         // validate the amount
         if (amount > config.maxAmount) {
-            revert TransferTooMuch();
+            revert ERC20TransferTooMuch();
         }
 
         // validate the recipient
@@ -28,7 +27,7 @@ abstract contract ERC20Validator is ValidatorBase, IERC20Validator {
         revert ERC20NotAllowed();
     }
 
-    function validateAllowance(address, /* token */ bytes memory data, bytes memory configData) public pure {
+    function validateERC20Allowance(address, /* token */ bytes memory data, bytes memory configData) public pure {
         // decode the data argument (which contains the encoded approve arguments)
         (address spender, uint256 amount) = abi.decode(data, (address, uint256));
         // decode the config data directly
@@ -36,7 +35,7 @@ abstract contract ERC20Validator is ValidatorBase, IERC20Validator {
 
         // validate the amount
         if (amount > config.maxAmount) {
-            revert ApproveTooMuch();
+            revert ERC20ApproveTooMuch();
         }
 
         // validate the spender

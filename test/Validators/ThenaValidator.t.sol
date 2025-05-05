@@ -6,7 +6,7 @@ import { IThenaPositionManager } from 'src/interfaces/IThenaPositionManager.sol'
 import { IThenaRouter } from 'src/interfaces/IThenaRouter.sol';
 import { IThenaPool } from 'src/interfaces/IThenaPool.sol';
 import { IPositionManager } from 'src/interfaces/IPositionManager.sol'; // For shared structs like CollectParams
-import { IOracleAdapter } from 'src/interfaces/IOracleAdapter.sol';
+import { IOracleAdapter } from 'src/interfaces/IOracle.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import { IValidator } from 'src/interfaces/IValidator.sol'; // Import IValidator for the struct/errors
 import { PoolAddress as PoolAddressThena } from 'src/libraries/PoolAddressThena.sol';

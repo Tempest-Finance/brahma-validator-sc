@@ -32,7 +32,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.transfer.selector,
-            selfSelector: IERC20Validator.validateTransfer.selector,
+            selfSelector: IERC20Validator.validateERC20Transfer.selector,
             configData: abi.encode(config)
         });
         vm.prank(_governor);
@@ -62,7 +62,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.transfer.selector,
-            selfSelector: IERC20Validator.validateTransfer.selector,
+            selfSelector: IERC20Validator.validateERC20Transfer.selector,
             configData: abi.encode(config)
         });
         vm.prank(_governor);
@@ -73,7 +73,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         bytes memory callData = abi.encodeCall(IERC20.transfer, (user1, transferAmount));
 
         // 4. Validate - should revert
-        vm.expectRevert(IERC20Validator.TransferTooMuch.selector);
+        vm.expectRevert(IERC20Validator.ERC20TransferTooMuch.selector);
         _validator.validate(tokenAddress, callData);
     }
 
@@ -92,7 +92,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.transfer.selector,
-            selfSelector: IERC20Validator.validateTransfer.selector,
+            selfSelector: IERC20Validator.validateERC20Transfer.selector,
             configData: abi.encode(config)
         });
         // 2. Register config as governor
@@ -125,7 +125,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.approve.selector,
-            selfSelector: IERC20Validator.validateAllowance.selector,
+            selfSelector: IERC20Validator.validateERC20Allowance.selector,
             configData: abi.encode(config)
         });
         // 2. Register config as governor
@@ -155,7 +155,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.approve.selector,
-            selfSelector: IERC20Validator.validateAllowance.selector,
+            selfSelector: IERC20Validator.validateERC20Allowance.selector,
             configData: abi.encode(config)
         });
         // 2. Register config as governor
@@ -167,7 +167,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         bytes memory callData = abi.encodeCall(IERC20.approve, (user1, approveAmount));
 
         // 4. Validate - should revert
-        vm.expectRevert(IERC20Validator.ApproveTooMuch.selector);
+        vm.expectRevert(IERC20Validator.ERC20ApproveTooMuch.selector);
         _validator.validate(tokenAddress, callData);
     }
 
@@ -186,7 +186,7 @@ contract ERC20ValidatorTests is ValidatorTestBase {
         registrations[0] = IValidator.ValidationRegistration({
             target: tokenAddress,
             externalSelector: IERC20.approve.selector,
-            selfSelector: IERC20Validator.validateAllowance.selector,
+            selfSelector: IERC20Validator.validateERC20Allowance.selector,
             configData: abi.encode(config)
         });
         // 2. Register config as governor

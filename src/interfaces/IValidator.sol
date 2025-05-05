@@ -34,4 +34,6 @@ interface IValidator {
     error InvalidRecipient();
     error PositionsCallFailed();
     error ValidationNotConfigured();
+
+    function noValidate() external pure;
 }
