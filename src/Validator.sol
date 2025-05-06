@@ -87,6 +87,16 @@ contract Validator is
     }
 
     /**
+     * @notice Unregisters a validation configuration.
+     * @dev Only callable by the GOVERNANCE_ROLE.
+     * @param target The target contract address.
+     * @param externalSelector The external function selector to unregister.
+     */
+    function unregisterValidation(address target, bytes4 externalSelector) external onlyRole(GOVERNANCE_ROLE) {
+        delete _validationConfigs[_validationKey(target, externalSelector)];
+    }
+
+    /**
      * @notice Registers a new oracle for token pair
      * @dev Only callable by the GOVERNANCE_ROLE
      * @param token0 The address of the first token in the pair

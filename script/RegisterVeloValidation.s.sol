@@ -13,6 +13,7 @@ import { IThenaPositionManager } from 'src/interfaces/IThenaPositionManager.sol'
 import { IShadowRouter } from 'src/interfaces/IShadowRouter.sol';
 import { IShadowPositionManager } from 'src/interfaces/IShadowPositionManager.sol';
 import { IVelodromeRouter } from 'src/interfaces/IVelodromeRouter.sol';
+import { IVelodromeGauge } from 'src/interfaces/IVelodromeGauge.sol';
 import { IVelodromePositionManager } from 'src/interfaces/IVelodromePositionManager.sol';
 
 contract RegisterVeloValidationScript is Script {
@@ -38,10 +39,11 @@ contract RegisterVeloValidationScript is Script {
     address constant _BRETT = 0x532f27101965dd16442E59d40670FaF5eBB142E4; // BRETT
 
     address constant _AERO = 0x940181a94A35A4569E4529A3CDfB74e38FD98631; // AERO
+    address constant _FEE_RECIPIENT = 0x6f00B52f64A041E7623a9747EcBDA91d619E2Caa; // BRETT
 
     function run() external {
         // Define the total number of registrations
-        uint256 numRegistrations = 16;
+        uint256 numRegistrations = 36;
         IValidator.ValidationRegistration[] memory registrations = new IValidator.ValidationRegistration[](
             numRegistrations
         );
@@ -140,7 +142,7 @@ contract RegisterVeloValidationScript is Script {
 
         // 14. transfer AERO
         address[] memory aeroRecipients = new address[](1);
-        aeroRecipients[0] = _OPEN_OCEAN;
+        aeroRecipients[0] = _FEE_RECIPIENT;
         bytes memory aeroTransferConfig = abi.encode(
             IERC20Validator.ERC20TransferConfig({ allowedRecipients: aeroRecipients, maxAmount: type(uint256).max })
         );
@@ -150,6 +152,22 @@ contract RegisterVeloValidationScript is Script {
             selfSelector: validator.validateERC20Transfer.selector,
             configData: aeroTransferConfig
         });
+
+        address[] memory gauges = _getGauges();
+        for (uint256 i = 0; i < gauges.length; i++) {
+            registrations[regIndex++] = IValidator.ValidationRegistration({
+                target: gauges[i],
+                externalSelector: IVelodromeGauge.deposit.selector,
+                selfSelector: validator.noValidate.selector,
+                configData: ''
+            });
+            registrations[regIndex++] = IValidator.ValidationRegistration({
+                target: gauges[i],
+                externalSelector: IVelodromeGauge.withdraw.selector,
+                selfSelector: validator.noValidate.selector,
+                configData: ''
+            });
+        }
 
         // --- Execute Registration ---
         require(_VALIDATOR_ADDRESS != address(0), 'Validator address not set!');
@@ -164,7 +182,7 @@ contract RegisterVeloValidationScript is Script {
         console.log('Validations registered successfully on Validator:', _VALIDATOR_ADDRESS);
     }
 
-    function _getTokensForAllowance() internal returns (address[] memory) {
+    function _getTokensForAllowance() internal pure returns (address[] memory) {
         address[] memory tokens = new address[](8);
         tokens[0] = _WETH;
         tokens[1] = _USDC;
@@ -177,7 +195,7 @@ contract RegisterVeloValidationScript is Script {
         return tokens;
     }
 
-    function _getGauges() internal returns (address[] memory gauges) {
+    function _getGauges() internal pure returns (address[] memory gauges) {
         gauges = new address[](10);
         gauges[0] = 0xF33a96b5932D9E9B9A0eDA447AbD8C9d48d2e0c8;
         gauges[1] = 0x41b2126661C673C2beDd208cC72E85DC51a5320a;
