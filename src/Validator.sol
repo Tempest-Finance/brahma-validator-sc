@@ -9,6 +9,7 @@ import { ERC721Validator } from 'src/base/ERC721Validator.sol';
 import { ShadowValidator } from 'src/base/ShadowValidator.sol';
 import { VelodromeValidator } from 'src/base/VelodromeValidator.sol';
 import { ThenaValidator } from 'src/base/ThenaValidator.sol';
+import { OpenOceanValidator } from 'src/base/OpenOceanValidator.sol';
 import { BytesLib } from 'src/libraries/BytesLib.sol';
 
 /**
@@ -22,7 +23,8 @@ contract Validator is
     ERC721Validator,
     ShadowValidator,
     VelodromeValidator,
-    ThenaValidator
+    ThenaValidator,
+    OpenOceanValidator
 {
     using Address for address;
     using BytesLib for bytes;

@@ -10,6 +10,8 @@ import { TransparentUpgradeableProxy } from '@openzeppelin/contracts/proxy/trans
 
 contract DeployScript is Script {
     function run() external {
+        bytes32 salt = keccak256(abi.encodePacked(vm.envString('SALT')));
+
         // Read governor address from environment variable
         address governor = vm.envAddress('GOVERNOR_ADDRESS');
         require(governor != address(0), 'DeployScript: GOVERNOR_ADDRESS env variable not set or is zero address');
@@ -21,28 +23,23 @@ contract DeployScript is Script {
         Validator validatorImplementation = new Validator();
         console.log('Validator Implementation deployed at:', address(validatorImplementation));
 
-        // 2. Deploy ProxyAdmin
-        // The deployer (msg.sender) will be the owner of ProxyAdmin
-        ProxyAdmin proxyAdmin = new ProxyAdmin(governor);
-        console.log('ProxyAdmin deployed at:', address(proxyAdmin));
-
-        // 3. Encode Validator Initializer Data
+        // 2. Encode Validator Initializer Data
         bytes memory validatorInitData = abi.encodeWithSelector(
             Validator.initialize.selector,
             governor // governor address
         );
 
-        // 4. Deploy Validator Proxy (TransparentUpgradeableProxy)
-        TransparentUpgradeableProxy validatorProxy = new TransparentUpgradeableProxy(
+        // 3. Deploy Validator Proxy (TransparentUpgradeableProxy)
+        TransparentUpgradeableProxy validatorProxy = new TransparentUpgradeableProxy{ salt: salt }(
             address(validatorImplementation),
-            address(proxyAdmin),
+            governor,
             validatorInitData
         );
         address validatorProxyAddress = address(validatorProxy);
         console.log('Validator Proxy deployed at:', validatorProxyAddress);
 
         // 5. Deploy MultiSendCallOnly, linking it to the Validator Proxy
-        MultiSendCallOnly multiSend = new MultiSendCallOnly(validatorProxyAddress);
+        MultiSendCallOnly multiSend = new MultiSendCallOnly{ salt: salt }(validatorProxyAddress);
         console.log('MultiSendCallOnly deployed at:', address(multiSend));
 
         vm.stopBroadcast();
